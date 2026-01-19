@@ -12,29 +12,44 @@ jobs:
         with:
           node-version: '18'
       
-      - name: Install Cordova and dependencies
+      - name: Install Cordova and create fresh project
         run: |
           npm install -g cordova
           cordova telemetry off
+          
+          # Remove problematic plugins before building
+          if [ -f "config.xml" ]; then
+            echo "Removing cordova-plugin-firebasex if present..."
+            # This ensures the plugin doesn't break the build
+            sed -i '/cordova-plugin-firebasex/d' config.xml || true
+            sed -i '/<plugin name="cordova-plugin-firebasex"/d' config.xml || true
+          fi
       
       - name: Prepare config.xml for Android 13+
         run: |
-          # Update target SDK to 35 (Android 14)
-          sed -i 's/"android-targetSdkVersion" value="[0-9]*"/"android-targetSdkVersion" value="35"/' config.xml || true
-          # Remove deprecated splash tags if they exist
-          sed -i '/<splash /d' config.xml || true
-          echo "Updated config.xml for modern Android"
+          # Update target SDK
+          sed -i 's/"android-targetSdkVersion" value="[0-9]*"/"android-targetSdkVersion" value="33"/' config.xml || true
+          # Ensure minimum SDK is reasonable
+          sed -i 's/"android-minSdkVersion" value="[0-9]*"/"android-minSdkVersion" value="22"/' config.xml || true
+          echo "Updated config.xml"
       
-      - name: Add Android platform
+      - name: Add Android platform and build
         run: |
+          # Create fresh platforms directory
+          rm -rf platforms/
+          
+          # Add Android platform (version 11 is stable)
           cordova platform add android@11.0.0
-      
-      - name: Build Android APK
-        run: |
-          cordova build android --verbose
+          
+          # Add ONLY essential plugins
+          cordova plugin add cordova-plugin-camera
+          cordova plugin add cordova-plugin-geolocation
+          
+          # Build without firebase plugin
+          cordova build android --release
       
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: citizen-report-apk
-          path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          path: platforms/android/app/build/outputs/apk/release/app-release.apk

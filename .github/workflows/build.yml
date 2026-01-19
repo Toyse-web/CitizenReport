@@ -2,47 +2,10 @@ name: Build APK
 on: [push]
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Java 11 (CRITICAL)
-        uses: actions/setup-java@v4
+      - uses: uoou/build-apk-action@master  # SPECIALIZED FOR CORDOVA
         with:
-          distribution: 'temurin'
-          java-version: '11'
-      
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3.0.1  # CORRECT VERSION
-        with:
-          api-level: 33
-          build-tools-version: 33.0.0
-      
-      - name: Install dependencies
-        run: |
-          npm install -g cordova@12.0.0
-          npm install
-      
-      - name: Fix config.xml for Android 13+
-        run: |
-          # Ensure target SDK is set
-          if grep -q "android-targetSdkVersion" config.xml; then
-            echo "Target SDK already set"
-          else
-            echo 'Adding target SDK to config.xml'
-            sed -i '/<\/widget>/i \    <preference name="android-targetSdkVersion" value="33" />' config.xml
-          fi
-      
-      - name: Add Android platform
-        run: |
-          cordova platform add android@11.0.0 --nosave
-      
-      - name: Build APK
-        run: |
-          cordova build android --debug
-      
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: citizen-report-apk
-          path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          app-dir: '.'
+          build-tool: 'cordova'

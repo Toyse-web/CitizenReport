@@ -2,10 +2,42 @@ name: Build APK
 on: [push]
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - uses: uoou/build-apk-action@master  # SPECIALIZED FOR CORDOVA
+      
+      - name: Setup Java 11
+        uses: actions/setup-java@v4
         with:
-          app-dir: '.'
-          build-tool: 'cordova'
+          distribution: 'temurin'
+          java-version: '11'
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install Cordova and dependencies
+        run: |
+          npm install -g cordova@12.0.0
+          cordova telemetry off
+      
+      - name: Clean project
+        run: |
+          rm -rf platforms android plugins || true
+          npm cache clean --force
+      
+      - name: Add Android platform
+        run: |
+          cordova platform add android@11.0.0
+      
+      - name: Build APK (Direct Gradle)
+        run: |
+          cd platforms/android
+          ./gradlew clean assembleDebug --no-daemon
+      
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: citizen-report
+          path: platforms/android/app/build/outputs/apk/debug/app-debug.apk

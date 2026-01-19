@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- FIXED Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self' data: gap:;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://ssl.gstatic.com;
+        media-src *;
+        img-src 'self' data: https:;
+        connect-src 'self' *">
+    
+    <title>Citizen Report</title>
+    
+    <!-- Load Material Icons CSS (inlined to avoid CSP issues) -->
+    <style>
+        @font-face {
+            font-family: 'Material Icons';
+            font-style: normal;
+            font-weight: 400;
+            src: url(https://fonts.gstatic.com/s/materialicons/v142/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2) format('woff2');
+        }
+        
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .loading .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    
+<script>
+    class SimpleRouter {
+        constructor(container) {
+            this.container = document.querySelector(container);
+            this.routes = {};
+            this.currentRoute = '';
+            this.middlewares = [];
+        }
+        
+        addRoute(path, renderFunction) {
+            this.routes[path] = renderFunction;
+        }
+        
+        addMiddleware(middleware) {
+            this.middlewares.push(middleware);
+        }
+        
+        async navigate(path) {
+            // Run middlewares
+            for (const middleware of this.middlewares) {
+                const result = await middleware(path);
+                if (result === false) return;
+            }
+            
+            if (this.routes[path]) {
+                this.currentRoute = path;
+                this.container.innerHTML = this.routes[path]();
+
+                window.location.hash = path;
+                
+                // Scroll to top
+                window.scrollTo(0, 0);
+                
+                // Dispatch route change event
+                window.dispatchEvent(new CustomEvent('routechanged', { detail: { path } }));
+            } else {
+                console.error(`Route ${path} not found`);
+                this.navigate('/');
+            }
+        }
+        
+        start() {
+            // Handle hash changes
+            const handleHashChange = () => {
+                const hash = window.location.hash.replace('#', '') || '/';
+                this.navigate(hash);
+            };
+            
+            // Initial route
+            handleHashChange();
+            
+            // Listen for hash changes
+            window.addEventListener('hashchange', handleHashChange);
+            
+            // Store instance globally for easy access
+            window.router = this;
+        }
+    }
+</script>
+    
+    <!-- Our CSS (inlined to avoid CSP issues) -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Main App Container -->
+    <div id="app">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading app...</p>
+        </div>
+    </div>
+    
+    <script>
+        window.handleLogin = function() { console.log('Login handler not implemented'); };
+        window.handleLogout = function() { console.log('Logout handler not implemented'); };
+        window.handleRegister = function() { console.log('Register handler not implemented'); };
+        window.getCurrentLocation = function() { console.log('Location handler not implemented'); };
+        window.takePhoto = function() { console.log('Camera handler not implemented'); };
+        window.submitIncident = function() { console.log('Submit handler not implemented'); };
+        window.refreshIncidents = function() { console.log('Refresh handler not implemented'); };
+        window.filterIncidents = function() { console.log('Filter handler not implemented'); };
+        window.refreshMap = function() { console.log('Map refresh handler not implemented'); };
+        window.centerOnUser = function() { console.log('Center map handler not implemented'); };
+    </script>
+    
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/location.js"></script>
+    <script src="js/incidents.js"></script>
+    <script src="js/map.js"></script>
+    <!-- camera.js is temporarily disabled -->
+    <!-- <script src="js/camera.js"></script> -->
+    <script src="js/app.js"></script>
+    
+    <script>
+        document.addEventListener('deviceready', function() {
+            console.log('Device is ready!');
+            
+            if (typeof initApp === 'function') {
+                setTimeout(initApp, 100);
+            }
+            
+            if (navigator.splashscreen) {
+                setTimeout(function() {
+                    navigator.splashscreen.hide();
+                }, 1000);
+            }
+            
+        }, false);
+        
+        if (!window.cordova) {
+            console.log('Running in browser mode');
+            setTimeout(function() {
+                if (typeof initApp === 'function') {
+                    initApp();
+                }
+            }, 300);
+        }
+    </script>
+</body>
+</html>

@@ -4,30 +4,37 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-    - name: Install Cordova
-      run: |
-        npm install -g cordova
-        cordova telemetry off
-    - name: Add Android platform
-      run: |
-        cordova platform add android
-    - name: Build Android APK
-      run: |
-        cordova build android
-    - name: Upload APK artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: citizen-report-apk
-        path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
-    - name: Fix config.xml for Android 35
-  run: |
-    # Update target SDK to 35
-    sed -i 's/android-targetSdkVersion" value="33"/android-targetSdkVersion" value="35"/' config.xml
-    # Remove deprecated splash tags
-    sed -i '/<splash /d' config.xml
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install Cordova and dependencies
+        run: |
+          npm install -g cordova
+          cordova telemetry off
+      
+      - name: Prepare config.xml for Android 13+
+        run: |
+          # Update target SDK to 35 (Android 14)
+          sed -i 's/"android-targetSdkVersion" value="[0-9]*"/"android-targetSdkVersion" value="35"/' config.xml || true
+          # Remove deprecated splash tags if they exist
+          sed -i '/<splash /d' config.xml || true
+          echo "Updated config.xml for modern Android"
+      
+      - name: Add Android platform
+        run: |
+          cordova platform add android@11.0.0
+      
+      - name: Build Android APK
+        run: |
+          cordova build android --verbose
+      
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: citizen-report-apk
+          path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
